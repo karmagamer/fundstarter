@@ -1,37 +1,24 @@
-var http = require("http"),
-    url = require("url"),
-    path = require("path"),
-    fs = require("fs"),
-    port = process.env.PORT || 3000;
+var http = require('http');
+var fs = require('fs');
+var server = http.createServer(function (req, res) {
+    var fileName = './public/index.html';
+    fs.exists(fileName, function (exists) {
+        if (exists) {
+            fs.stat(fileName, function (error, stats) {
+                fs.open(fileName, "r", function (error, fd) {
+                    var buffer = new Buffer(stats.size);
 
-http.createServer(function(request, response) {
+                    fs.read(fd, buffer, 0, buffer.length, null, function (error, bytesRead, buffer) {
+                        var data = buffer.toString("utf8", 0, buffer.length);
+                        res.writeHead(200, {"Content-Type": "text/html"});
+                        res.end(data);
 
-  var uri = url.parse(request.url).pathname
-    , filename = path.join(process.cwd(), uri);
-
-  fs.exists(filename, function(exists) {
-    if(!exists) {
-      response.writeHead(404, {"Content-Type": "text/plain"});
-      response.write("404 Not Found\n");
-      response.end();
-      return;
-    }
-
-    if (fs.statSync(filename).isDirectory()) filename += './public/index.html';
-// first commit for readFile
-    fs.readFile(filename, "binary", function(err, file) {
-      if(err) {
-        response.writeHead(500, {"Content-Type": "text/plain"});
-        response.write(err + "\n");
-        response.end();
-        return;
-      }
-
-      response.writeHead(200);
-      response.write(file, "binary");
-      response.end();
+                        fs.close(fd);
+                    });
+                });
+            });
+        }
     });
-  });
-}).listen(parseInt(port, 10));
-
-console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
+});
+server.listen(3000);
+console.log('server running...')
