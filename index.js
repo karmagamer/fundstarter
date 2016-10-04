@@ -1,22 +1,37 @@
-var express = require('express')
-var app = express()
+var http = require("http"),
+    url = require("url"),
+    path = require("path"),
+    fs = require("fs"),
+    port = process.argv[2] || 8888;
 
+http.createServer(function(request, response) {
 
-app.set('port', (process.env.PORT || 8080))
-//app.use(express.static(__dirname + '/public'))
+  var uri = url.parse(request.url).pathname
+    , filename = path.join(process.cwd(), uri);
 
-//__dirname returns the directory that the currently executing script is in.
+  fs.exists(filename, function(exists) {
+    if(!exists) {
+      response.writeHead(404, {"Content-Type": "text/plain"});
+      response.write("404 Not Found\n");
+      response.end();
+      return;
+    }
 
-app.get('/', function(request, response) {
-    response.sendFile('public/index.html',{root:__dirname})
+    if (fs.statSync(filename).isDirectory()) filename += './public/index.html';
 
-/* sends an entire HTTP response to the client,                                                                                                                                     
- including headers and content,                                                                                                                                                     
- which is why you can only call once*/
+    fs.readFile(filename, "binary", function(err, file) {
+      if(err) {
+        response.writeHead(500, {"Content-Type": "text/plain"});
+        response.write(err + "\n");
+        response.end();
+        return;
+      }
 
+      response.writeHead(200);
+      response.write(file, "binary");
+      response.end();
+    });
+  });
+}).listen(parseInt(port, 10));
 
-})
-
-app.listen(app.get('port'), function() {
-  console.log("Node app is running at :" + app.get('port'))
-})
+console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
