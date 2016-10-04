@@ -1,24 +1,30 @@
-var http = require('http');
-var fs = require('fs');
-var server = http.createServer(function (req, res) {
-    var fileName = './public/index.html';
-    fs.exists(fileName, function (exists) {
-        if (exists) {
-            fs.stat(fileName, function (error, stats) {
-                fs.open(fileName, "r", function (error, fd) {
-                    var buffer = new Buffer(stats.size);
+var http = require("http"),
+    url = require("url"),
+    path = require("path"),
+    fs = require("fs"),
+    port = process.env.PORT || 3000;
 
-                    fs.read(fd, buffer, 0, buffer.length, null, function (error, bytesRead, buffer) {
-                        var data = buffer.toString("utf8", 0, buffer.length);
-                        res.writeHead(200, {"Content-Type": "text/html"});
-                        res.end(data);
+http.createServer(function(request, response) {
 
-                        fs.close(fd);
-                    });
-                });
-            });
-        }
-    });
-});
-server.listen(3000);
-console.log('server running...')
+  var uri = url.parse(request.url).pathname
+    , filename = path.join(process.cwd(), uri);
+
+  fs.exists(filename, function(exists) {
+    if(!exists) {
+      response.writeHead(404, {"Content-Type": "text/plain"});
+      response.write("404 Not Found\n");
+      response.end();
+      return;
+    }
+
+    if (fs.statSync(filename).isDirectory()) filename += './public/index.html';
+var data = fs.readFileSync(filename, 'utf8');
+try{
+response.writeHead(200, {"Content-Type": "text/html"});
+response.end(data);
+}
+catch (err) {  console.error(err);}
+  });
+}).listen(parseInt(port, 10));
+
+console.log("Static file server running at\n  => http://localhost:" + port + "/\nCTRL + C to shutdown");
