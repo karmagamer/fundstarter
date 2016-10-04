@@ -18,7 +18,7 @@ http.createServer(function(request, response) {
     }
 
     if (fs.statSync(filename).isDirectory()) filename += './public/index.html';
-
+// first commit for readFile
     fs.readFile(filename, "binary", function(err, file) {
       if(err) {
         response.writeHead(500, {"Content-Type": "text/plain"});
